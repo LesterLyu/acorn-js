@@ -22,7 +22,7 @@ class Acorn {
      * @return {Promise<Acorn>} Acorn instance
      * @throws {LoginError|Error} LoginError instance or error thrown from request-promise or unknown error
      */
-    login = async () => {
+    async login() {
         let url = 'https://acorn.utoronto.ca/sws';
         let response;
 
@@ -43,8 +43,10 @@ class Acorn {
         response = await rp.post({
             uri: url,
             jar: this._cookieJar,
+            followAllRedirects: true,
             form
         });
+
         if (!response.includes('SAMLResponse')) {
             throw parseAcornLoginError(response);
         }
@@ -66,7 +68,11 @@ class Acorn {
         }
     };
 
-    loadRegistrations = async () => {
+    /**
+     * Load registrations, this is called internally after login.
+     * @return {Promise<void>}
+     */
+    async loadRegistrations() {
         const response = await rp.get({
             uri: 'https://acorn.utoronto.ca/sws/rest/enrolment/eligible-registrations',
             jar: this._cookieJar,
