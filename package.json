@@ -11,9 +11,12 @@
     "request-promise": "^4.2.4"
   },
   "devDependencies": {
-    "documentation": "^12.0.1"
+    "docdash": "^1.1.1",
+    "documentation": "^12.0.1",
+    "jsdoc": "^3.6.2",
+    "tsd-jsdoc": "^2.3.1"
   },
   "scripts": {
-    "docs": "documentation build index.js -f html -o docs"
+    "docs": "jsdoc --configure .jsdoc.json --verbose"
   }
 }

@@ -1,5 +1,6 @@
 const rp = require('request-promise');
 const {getFormData, parseAcornLoginError} = require('./utils');
+const {CourseAPI} = require('./api');
 
 /**
  * Represents Acorn.
@@ -13,8 +14,21 @@ class Acorn {
     constructor(username, password) {
         this.username = username;
         this.password = password;
+        // store cookie across all requests.
         this._cookieJar = rp.jar();
+        /**
+         * @type {Registration[]}
+         */
         this.registrations = null;
+        this.course = new CourseAPI(this);
+    }
+
+    /**
+     * @private
+     * @returns {RequestJar}
+     */
+    get cookieJar() {
+        return this._cookieJar;
     }
 
     /**
@@ -29,7 +43,7 @@ class Acorn {
         // first step
         response = await rp({
             uri: url,
-            jar: this._cookieJar,
+            jar: this.cookieJar,
             resolveWithFullResponse: true,
         });
         url = response.request.href;
@@ -42,7 +56,7 @@ class Acorn {
         // second step
         response = await rp.post({
             uri: url,
-            jar: this._cookieJar,
+            jar: this.cookieJar,
             followAllRedirects: true,
             form
         });
@@ -55,7 +69,7 @@ class Acorn {
         // final step
         response = await rp.post({
             uri: action,
-            jar: this._cookieJar,
+            jar: this.cookieJar,
             followAllRedirects: true,
             form: data
         });
@@ -70,15 +84,15 @@ class Acorn {
 
     /**
      * Load registrations, this is called internally after login.
+     * @private
      * @return {Promise<void>}
      */
     async loadRegistrations() {
-        const response = await rp.get({
+        this.registrations = await rp.get({
             uri: 'https://acorn.utoronto.ca/sws/rest/enrolment/eligible-registrations',
-            jar: this._cookieJar,
+            jar: this.cookieJar,
             json: true
         });
-        this.registrations = response;
     };
 
 }
