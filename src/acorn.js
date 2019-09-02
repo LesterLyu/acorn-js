@@ -1,4 +1,4 @@
-const rp = require('request-promise');
+const rp = require('request-promise-native');
 const {getFormData, parseAcornLoginError} = require('./utils');
 const {CourseAPI} = require('./api');
 
