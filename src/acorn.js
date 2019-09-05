@@ -20,6 +20,10 @@ class Acorn {
          * @type {Registration[]}
          */
         this.registrations = null;
+
+        /**
+         * @type {CourseAPI}
+         */
         this.course = new CourseAPI(this);
     }
 

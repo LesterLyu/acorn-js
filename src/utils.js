@@ -38,5 +38,5 @@ module.exports = {
         const root = parse(body);
         const p = root.querySelector('p.form-error');
         return new LoginError(p.innerHTML);
-    }
+    },
 };

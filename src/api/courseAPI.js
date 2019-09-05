@@ -62,6 +62,31 @@ class CourseAPI {
     }
 
     /**
+     *
+     * @param {number} registrationIndex - The index of registrations.
+     * @param {string} courseCode - Course code, i.e. "CSC108H1", the last two chars "H1" is required.
+     * @param {string} courseSessionCode - Course session, i.e. "20199"
+     * @param {string} sectionCode - Course section, i.e. "Y", "S", "F"
+     * @returns {Promise<void>}
+     */
+    async courseDetail(courseCode, courseSessionCode, sectionCode, registrationIndex = 0) {
+        const params = this.registrations[registrationIndex].registrationParams;
+        return await rp.get({
+            uri: 'https://acorn.utoronto.ca/sws/rest/enrolment/course/view',
+            qs: {
+                ...params,
+                activityApprovedInd: '',
+                activityApprovedOrg: '',
+                courseCode,
+                courseSessionCode,
+                sectionCode
+            },
+            jar: this.cookieJar,
+            json: true,
+        });
+    }
+
+    /**
      * Enrol a course.
      * @param {number} [registrationIndex=0] - The index of registrations.
      * @param {string} code - Course code, i.e. "CSC108H1", the last two chars "H1" is required.
