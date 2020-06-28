@@ -34,7 +34,7 @@ class CourseAPI {
      */
     async enrolledCourses(registrationIndex = 0) {
         const params = this.registrations[registrationIndex].registrationParams;
-        return await rp.get({
+        await rp.get({
             uri: 'https://acorn.utoronto.ca/sws/rest/enrolment/course/enrolled-courses',
             qs: params,
             jar: this.cookieJar,
@@ -49,7 +49,7 @@ class CourseAPI {
      */
     async enrollmentCart(registrationIndex = 0) {
         const params = this.registrations[registrationIndex].registrationParams;
-        return await rp.get({
+        await rp.get({
             uri: 'https://acorn.utoronto.ca/sws/rest/enrolment/plan',
             qs: {
                 candidacyPostCode: params.candidacyPostCode,
@@ -71,7 +71,7 @@ class CourseAPI {
      */
     async courseDetail(courseCode, courseSessionCode, sectionCode, registrationIndex = 0) {
         const params = this.registrations[registrationIndex].registrationParams;
-        return await rp.get({
+        await rp.get({
             uri: 'https://acorn.utoronto.ca/sws/rest/enrolment/course/view',
             qs: {
                 ...params,

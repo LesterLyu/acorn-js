@@ -1,5 +1,5 @@
 const rp = require('request-promise-native');
-const {getFormData, parseAcornLoginError} = require('./utils');
+const {getFormData, getIframeData, generateIframeSrc, parseIframePostResult, LoginError, userAgent} = require('./utils');
 const {CourseAPI} = require('./api');
 
 /**
@@ -49,6 +49,9 @@ class Acorn {
             uri: url,
             jar: this.cookieJar,
             resolveWithFullResponse: true,
+            headers: {
+                'User-Agent': userAgent,
+            }
         });
         url = response.request.href;
 
@@ -56,26 +59,91 @@ class Acorn {
         form.j_username = this.username;
         form.j_password = this.password;
         form._eventId_proceed = '';
+        form['$csrfToken.getParameterName()'] = '$csrfToken.getToken()';
 
         // second step
         response = await rp.post({
             uri: url,
             jar: this.cookieJar,
+            resolveWithFullResponse: true,
             followAllRedirects: true,
-            form
+            form,
+            headers: {
+                'User-Agent': userAgent,
+            }
+        });
+        url = response.request.href;
+
+        if (!response.body.includes('iframe')) {
+            throw new LoginError('Username or password incorrect.');
+        }
+        const iframeData = getIframeData(response.body);
+
+        const appPart = iframeData['data-sig-request'].split(':')[1];
+        url = generateIframeSrc(iframeData['data-host'], iframeData['data-sig-request'].split(':')[0], url);
+
+
+        // third step (iframe, Duo Security - Two-Factor Authentication)
+        response = await rp.get({
+            uri: url,
+            jar: this.cookieJar,
+            followAllRedirects: true,
+            headers: {
+                'User-Agent': userAgent,
+            }
         });
 
-        if (!response.includes('SAMLResponse')) {
-            throw parseAcornLoginError(response);
-        }
-        const {data, action} = getFormData(response);
+        let {data, action} = getFormData(response);
+
+        // override with real values from a browser
+        data.color_depth = 24;
+        data.screen_resolution_width = 1920;
+        data.screen_resolution_height = 1080;
+        data.is_cef_browser = false;
+        data.is_ipad_os = false;
+        data.referer = data.parent;
+
+        // forth step (post to duo security)
+        response = await rp.post({
+            uri: url,
+            jar: this.cookieJar,
+            followAllRedirects: true,
+            form: data,
+            headers: {
+                'User-Agent': userAgent,
+            }
+        });
+
+        data = parseIframePostResult(response);
+        url = data['js_parent'];
+
+        // fifth step
+        response = await rp.post({
+            uri: url,
+            jar: this.cookieJar,
+            followAllRedirects: true,
+            form: {
+                _eventId: 'proceed',
+                sig_response: data['js_cookie'] + ':' + appPart
+            },
+            headers: {
+                'User-Agent': userAgent,
+            }
+        });
+
+        const res = getFormData(response);
+        data = res.data;
+        action = res.action;
 
         // final step
         response = await rp.post({
             uri: action,
             jar: this.cookieJar,
             followAllRedirects: true,
-            form: data
+            form: data,
+            headers: {
+                'User-Agent': userAgent,
+            }
         });
 
         if (!response.includes('<title>ACORN</title>')) {
